@@ -19,3 +19,12 @@ class Post(models.Model):
 
     def __str__(self) -> str:
         return f'{self.title}-{self.author}'   
+    
+class Comment(models.Model):
+    content = models.TextField()
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f'Comment by {self.user} on {self.post}'
