@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer
+from .serializers import UserSerializer,PostSerializer
 import jwt,datetime
 from django.contrib.auth import authenticate,login
 # Create your views here.
@@ -33,7 +33,6 @@ class LoginView(APIView):
             'id':user.id,
             'exp':datetime.datetime.now(datetime.UTC)+datetime.timedelta(minutes=60),
             'iat':datetime.datetime.now(datetime.UTC)
-
         }
         token=jwt.encode(payload,'cap1.4b',algorithm='HS256')
         response=Response()
@@ -48,3 +47,9 @@ class LoginView(APIView):
         )
         return response
         # return Response({'message':'Login successful','token':token}, status=status.HTTP_200_OK)
+
+class PostView(APIView):
+    def post(self, request):
+        serializer = PostSerializer(data=request.data)
+        if serializer.is_valid():
+           
