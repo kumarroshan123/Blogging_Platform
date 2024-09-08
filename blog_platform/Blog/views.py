@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer,PostSerializer
+from .serializers import UserSerializer,PostSerializer,CommentSerializer
 import jwt,datetime
 from django.contrib.auth import authenticate,login
 from rest_framework import generics
@@ -105,3 +105,27 @@ class PostListView(generics.ListAPIView):
             return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
         return super().get(request, *args, **kwargs)
+
+
+class CommentView(APIView):
+    def post(self, request, post_id):
+        token = request.COOKIES.get('jwt')
+        payload = jwt.decode(token, 'cap1.4b', algorithms=['HS256'])
+        profile = Profile.objects.filter(user=payload['id']).first()
+
+        if profile is None:
+            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        post = Post.objects.get(id=post_id)
+        comment_data = {
+            'post': post.id,
+            'user': profile.id,
+            'content': request.data.get('content')
+        }
+
+        serializer = CommentSerializer(data=comment_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Comment Added', 'comment': serializer.data}, status=status.HTTP_201_CREATED)
+
+        return Response({'message': 'Something Went Wrong'}, status=status.HTTP_400_BAD_REQUEST)
