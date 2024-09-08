@@ -8,6 +8,8 @@ from .serializers import UserSerializer,PostSerializer,CommentSerializer
 import jwt,datetime
 from django.contrib.auth import authenticate,login
 from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 # Create your views here.
 
 class RegisterView(APIView):
@@ -92,10 +94,16 @@ class PostView(APIView):
         post.delete()
         return Response({'message':'Post Deleted',"deleted_post":PostSerializer(post).data}, status=status.HTTP_200_OK)
 
+class CustomPagination(PageNumberPagination):
+    page_size=2
 
 class PostListView(generics.ListAPIView):
     queryset= Post.objects.all()
     serializer_class = PostSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['author','title']
+
     def get(self, request, *args, **kwargs):
         token = request.COOKIES.get('jwt')
         payload = jwt.decode(token, 'cap1.4b', algorithms=['HS256'])
