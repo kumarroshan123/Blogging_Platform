@@ -7,6 +7,7 @@ from rest_framework import status
 from .serializers import UserSerializer,PostSerializer
 import jwt,datetime
 from django.contrib.auth import authenticate,login
+from rest_framework import generics
 # Create your views here.
 
 class RegisterView(APIView):
@@ -53,7 +54,7 @@ class PostView(APIView):
         token= request.COOKIES.get('jwt')
         payload=jwt.decode(token,'cap1.4b',algorithms=['HS256'])
         profile = Profile.objects.filter(user=payload['id']).first()
-        if profile.user_type != 'author':
+        if profile.user_type != 'author' and profile.user_type != 'admin':
             return Response({'message':"Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
         
         request.data['author'] = profile.id
@@ -67,7 +68,7 @@ class PostView(APIView):
         token= request.COOKIES.get('jwt')
         payload=jwt.decode(token,'cap1.4b',algorithms=['HS256'])
         profile = Profile.objects.filter(user=payload['id']).first()
-        if profile.user_type != 'author':
+        if profile.user_type != 'author' and profile.user_type != 'admin':
             return Response({'message':"Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
         
         request.data['author'] = profile.id
@@ -84,9 +85,23 @@ class PostView(APIView):
         token= request.COOKIES.get('jwt')
         payload=jwt.decode(token,'cap1.4b',algorithms=['HS256'])
         profile = Profile.objects.filter(user=payload['id']).first()
-        if profile.user_type != 'author':
+        if profile.user_type != 'author' and profile.user_type != 'admin':
             return Response({'message':"Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
         post_id=kwargs.get('pk')
         post=Post.objects.get(id=post_id)
         post.delete()
         return Response({'message':'Post Deleted',"deleted_post":PostSerializer(post).data}, status=status.HTTP_200_OK)
+
+
+class PostListView(generics.ListAPIView):
+    queryset= Post.objects.all()
+    serializer_class = PostSerializer
+    def get(self, request, *args, **kwargs):
+        token = request.COOKIES.get('jwt')
+        payload = jwt.decode(token, 'cap1.4b', algorithms=['HS256'])
+        profile = Profile.objects.filter(user=payload['id']).first()
+
+        if profile.user_type not in ['author', 'admin']:
+            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return super().get(request, *args, **kwargs)
