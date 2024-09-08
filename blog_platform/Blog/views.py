@@ -63,3 +63,21 @@ class PostView(APIView):
             return Response({'message':'Post Added'}, status=status.HTTP_201_CREATED)
         return Response({'message':'Something Went Wrong'}, status=status.HTTP_400_BAD_REQUEST)
            
+    def put(self,request,*args,**kwargs):
+        token= request.COOKIES.get('jwt')
+        payload=jwt.decode(token,'cap1.4b',algorithms=['HS256'])
+        profile = Profile.objects.filter(user=payload['id']).first()
+        if profile.user_type != 'author':
+            return Response({'message':"Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        request.data['author'] = profile.id
+        post_id=kwargs.get('pk')
+        post=Post.objects.get(id=post_id)
+        serializer= PostSerializer(post, data=request.data,partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message':'Post Updated',"updated_post":serializer.data}, status=status.HTTP_200_OK)
+        return Response({'message':'Something Went Wrong'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
