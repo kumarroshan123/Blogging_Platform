@@ -8,6 +8,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "password"]
         extra_kwargs = {'password': {'write_only': True}}
 
+    def create(self,validated_data):
+        password=validated_data.pop('password',None)
+        instance= User(**validated_data)
+        if password is not None:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,4 +33,3 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
-        
